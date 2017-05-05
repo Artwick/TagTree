@@ -1,0 +1,14 @@
+/* 
+    Created on : 05.05.2017, 16:38:32
+    Author     : Artwick
+*/
+
+textarea {
+    width: 90%;
+    min-height: 500px;
+    padding: 5px;
+    background: #eee;
+    border-radius: 4px;
+    resize: vertical;
+    word-break: break-all;
+}
