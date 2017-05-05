@@ -25,9 +25,10 @@
 'use strict';
 
 var tagtree = {
-    
-    rawJSON : undefined,
-    
+    JSONObjects: undefined,
+    tags: [],
+    minTagId: 0,
+    maxTagId: 1,
     /**
      * Read the json file upload
      */
@@ -36,12 +37,93 @@ var tagtree = {
 
         reader.onload = (function (aFile) {
             return function (e) {
-                this.rawJSON = e.target.result;
+                tagtree.JSONObjects = JSON.parse(e.target.result);
+                console.log("# of objects: " + tagtree.JSONObjects.length);
+//                console.log(this.rawJSON);
                 $('#jsontextarea').val(e.target.result);
             };
         })(file[0]);
 
         reader.readAsText(file[0]);
     },
+    buildTree: function () {
+        if (!tagtree.JSONObjects) {
+            tagtree.JSONObjects = testData;
+        }
+        console.log("object[0]: ", tagtree.JSONObjects[0]);
+        tagtree.countTags();
+        tagtree.showAsChart();
+    },
+    countTags: function () {
+        for (var i = 0; i < tagtree.JSONObjects.length; i++) {
+            var tagArray = tagtree.JSONObjects[i].tids.split(",");
+            for (var ii = 0; ii < tagArray.length; ii++) {
+                var tagID = parseInt(tagArray[ii]);
+
+                if ((tagtree.minTagId == 0 && tagID != 0) || tagtree.minTagId > tagID)
+                    tagtree.minTagId = tagID;
+                if (tagtree.maxTagId < tagID)
+                    tagtree.maxTagId = tagID;
+
+                var tag = tagtree.tags[tagID];
+                if (tagtree.tags[tagID] > 0)
+                    tagtree.tags[tagID] = tagtree.tags[tagID] + 1;
+                else
+                    tagtree.tags[tagID] = 1;
+//                console.log("added +1 to tag " + tagID + " (total: " + tagtree.tags[tagID] + ")");
+//                console.log("min " + tagtree.minTagId + " - " + tagtree.maxTagId + " max" + " (length: " + tagtree.tags.length + ")");
+            }
+        }
+    },
+    showAsChart: function () {
+
+        console.log("min " + tagtree.minTagId + " - " + tagtree.maxTagId + " max" + " (length: " + tagtree.tags.length + ")");
+        // build datset for chart
+        var labels = [];
+        var chartData = [];
+        var bgColors = [];
+        for (var i = 0; i < tagtree.JSONObjects.length; i++) {
+            var iLabel = "#" + i;
+            if (tagtree.tags[i] && tagtree.tags[i] !== 0) {
+//                console.log("tag #" + i + " has " + tagtree.tags[i] + " occurrences");
+                labels.push(iLabel);
+                chartData.push(tagtree.tags[i]);
+                // alternate colors
+                if (chartData.length % 2 != 0)
+                    bgColors.push('rgba(55, 0, 200, 0.8)');
+                else
+                    bgColors.push('rgba(0, 0, 255, 0.5)');
+            }
+
+        }
+
+        var ctx = $("#myChart");
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                        label: "# of occurrences",
+                        data: chartData,
+                        backgroundColor: bgColors,
+                        borderWidth: 1,
+                    }]
+            },
+            options: {
+                title: {
+                    display: true,
+                    text: "Occurrences per tag"
+                },
+                scales: {
+                    yAxes: [{
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }]
+                }
+            }
+        });
+
+    }
 
 };
